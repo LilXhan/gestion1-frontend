@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Box, TextField, Button, Container, Paper, Input, Avatar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -27,51 +27,43 @@ function MatriculaForm() {
     };
 
     const handleSubmit = async (e) => {
-      e.preventDefault();
-  
-      const formData = new FormData();
-      formData.append('nombre', nombre);
-      formData.append('dni', dni);
-      formData.append('fecha_nacimiento', fechaNacimiento);
-      formData.append('grado', grado);
-      formData.append('direccion', direccion);
-  
-      // Verifica que el archivo esté seleccionado antes de añadirlo
-      if (certificado) {
-          formData.append('certificado_estudios', certificado);
-      } else {
-          alert("Por favor, selecciona un archivo para el certificado de estudios.");
-          return;
-      }
-  
-      try {
-          const token = localStorage.getItem('token');
-          
-          // Realiza la solicitud sin configurar Content-Type manualmente
-          const response = await axios.post('http://127.0.0.1:8000/api/matriculas/estudiante/crear/', formData, {
-              headers: {
-                  'Authorization': `Bearer ${token}`,
-              }
-          });
-  
-          const { client_secret } = response.data;
-          setClientSecret(client_secret);
-          alert("Estudiante registrado con éxito. ¡Ahora puedes proceder al pago!");
-  
-      } catch (error) {
-          console.error("Error en matrícula:", error);
-  
-          if (error.response) {
-              console.error("Datos del error:", error.response.data);
-              console.error("Estado del error:", error.response.status);
-              alert(`Error en matrícula: ${JSON.stringify(error.response.data)}`);
-          }
-      }
-  };
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('nombre', nombre);
+        formData.append('dni', dni);
+        formData.append('fecha_nacimiento', fechaNacimiento);
+        formData.append('grado', grado);
+        formData.append('direccion', direccion);
+        
+        if (certificado) {
+            formData.append('certificado_estudios', certificado);
+        } else {
+            alert("Por favor, selecciona un archivo para el certificado de estudios.");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post('http://127.0.0.1:8000/api/matriculas/estudiante/crear/', formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+
+            const { client_secret } = response.data;
+            setClientSecret(client_secret);
+            alert("Estudiante registrado con éxito. ¡Ahora puedes proceder al pago!");
+
+        } catch (error) {
+            console.error("Error en matrícula:", error);
+            if (error.response) {
+                alert(`Error en matrícula: ${JSON.stringify(error.response.data)}`);
+            }
+        }
+    };
 
     return (
         <>
-            {/* Navbar */}
             <AppBar position="static" sx={{ mb: 4 }}>
                 <Toolbar>
                     <Avatar sx={{ mr: 2 }}>{username.charAt(0).toUpperCase()}</Avatar>
@@ -84,7 +76,6 @@ function MatriculaForm() {
                 </Toolbar>
             </AppBar>
 
-            {/* Formulario de Matrícula */}
             <Container maxWidth="sm">
                 <Paper elevation={4} sx={{ p: 4, borderRadius: 2 }}>
                     <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
@@ -110,7 +101,6 @@ function MatriculaForm() {
                     </Box>
                 </Paper>
 
-                {/* Mostrar el componente de pago si el clientSecret está disponible */}
                 {clientSecret && (
                     <Box mt={4}>
                         <Typography variant="h6">
