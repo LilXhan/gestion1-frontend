@@ -1,4 +1,3 @@
-// MatriculaForm.jsx
 import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, Box, Paper, Stepper, Step, StepLabel, CircularProgress, Input } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
@@ -9,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 
 const steps = ['Registro de Datos', 'Confirmación', 'Pago'];
 
-// Estilos para centrar el spinner en el medio de la pantalla
 const LoadingContainer = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
@@ -29,7 +27,7 @@ function MatriculaForm() {
     const [certificado, setCertificado] = useState(null);
     const [clientSecret, setClientSecret] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [step, setStep] = useState(null); // Inicialmente nulo para que no renderice el primer paso si ya se completó
+    const [step, setStep] = useState(null);
     const navigate = useNavigate();
     const theme = useTheme();
 
@@ -37,13 +35,18 @@ function MatriculaForm() {
         const initializeForm = async () => {
             try {
                 const response = await axios.get('/api/matriculas/check-student/');
-                if (response.data.payment_completed) {
-                    navigate('/pago-exitoso'); // Redirige directamente si ya completó el pago
-                } else if (response.data.has_student) {
-                    setClientSecret(response.data.client_secret);
-                    setStep(2); // Ir directamente al paso de pago si ya existe el estudiante
+                const { has_student, payment_completed, matricula_rechazada, client_secret } = response.data;
+
+                if (payment_completed && !matricula_rechazada) {
+                    navigate('/pago-exitoso'); // Redirige a PagoExitoso si el pago está completado y no hay rechazo
+                } else if (matricula_rechazada) {
+                    Swal.fire("Atención", "Tu matrícula ha sido rechazada. Por favor revisa tu información y vuelve a intentar.", "warning");
+                    setStep(0); // Muestra el formulario de registro en caso de rechazo
+                } else if (has_student) {
+                    setClientSecret(client_secret);
+                    setStep(2); // Si el estudiante ya está registrado, muestra el paso de pago
                 } else {
-                    setStep(0); // Mostrar el paso de registro si no hay estudiante registrado
+                    setStep(0); // Si no hay estudiante registrado, muestra el formulario de matrícula
                 }
             } catch (error) {
                 Swal.fire({
@@ -54,24 +57,11 @@ function MatriculaForm() {
                     showConfirmButton: false,
                     timer: 3000
                 });
-                setStep(0); // En caso de error, aseguramos que pueda intentar registrarse
+                setStep(0);
             }
         };
         initializeForm();
     }, [navigate]);
-
-    useEffect(() => {
-        const storedData = JSON.parse(localStorage.getItem('formData') || '{}');
-        if (storedData.nombre) setNombre(storedData.nombre);
-        if (storedData.dni) setDni(storedData.dni);
-        if (storedData.fechaNacimiento) setFechaNacimiento(storedData.fechaNacimiento);
-        if (storedData.grado) setGrado(storedData.grado);
-        if (storedData.direccion) setDireccion(storedData.direccion);
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem('formData', JSON.stringify({ nombre, dni, fechaNacimiento, grado, direccion }));
-    }, [nombre, dni, fechaNacimiento, grado, direccion]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -87,7 +77,7 @@ function MatriculaForm() {
         try {
             const response = await axios.post('/api/matriculas/estudiante/crear/', formData);
             setClientSecret(response.data.client_secret);
-            setStep(2);
+            setStep(2); // Pasa al paso de pago tras registro
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -96,7 +86,6 @@ function MatriculaForm() {
                 showConfirmButton: false,
                 timer: 3000
             });
-            localStorage.removeItem('formData');
         } catch (error) {
             Swal.fire({
                 toast: true,
@@ -122,7 +111,6 @@ function MatriculaForm() {
         navigate('/pago-exitoso');
     };
 
-    // Mostrar spinner centrado mientras se verifica el estado del estudiante
     if (step === null) {
         return (
             <LoadingContainer>

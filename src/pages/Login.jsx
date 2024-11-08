@@ -31,7 +31,7 @@ function Login() {
             const response = await axios.post('/api/token/', { username, password });
             localStorage.setItem('token', response.data.access);
             setIsAuthenticated(true);
-            navigate('/matricula');
+            navigate('/'); // Cambia a '/' para redirigir al InitialRoute
         } catch (error) {
             Swal.fire({
                 toast: true,
