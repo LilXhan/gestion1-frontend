@@ -1,9 +1,8 @@
 import React from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
-import { Button, Box, Typography, Container } from '@mui/material';
-import Navbar from './Navbar';
+import { Button, Box, Typography } from '@mui/material';
 
-function StripePayment({ clientSecret }) {
+function StripePayment({ clientSecret, onSuccess }) {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -11,37 +10,37 @@ function StripePayment({ clientSecret }) {
         if (!stripe || !elements) return;
 
         const cardElement = elements.getElement(CardElement);
-        const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
             payment_method: {
                 card: cardElement,
             },
         });
 
         if (error) {
-            console.error("Payment failed:", error);
-            alert("Error en el pago: " + error.message);
+            console.error("Error en el pago:", error);
         } else if (paymentIntent.status === 'succeeded') {
-            alert("Pago completado con éxito");
-            // Redirigir a la pantalla de confirmación
-            window.location.href = "/confirmacion";
+            alert("Pago realizado con éxito. Matrícula completa.");
+            onSuccess();
         }
     };
 
     return (
-      <>
-      <Navbar />
-        <Container maxWidth="sm">
-            <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
-                <Typography variant="h4" gutterBottom>
-                    Realizar Pago
-                </Typography>
-                <CardElement />
-                <Button variant="contained" color="primary" onClick={handlePayment} fullWidth sx={{ mt: 3 }}>
-                    Pagar
-                </Button>
-            </Box>
-        </Container>
-      </>
+        <Box mt={3} p={3} border="1px solid #ccc" borderRadius={2}>
+            <Typography variant="h6" gutterBottom>
+                Ingresar Información de Pago
+            </Typography>
+            <CardElement options={{ hidePostalCode: true }} />
+            <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                sx={{ mt: 3 }}
+                onClick={handlePayment}
+                disabled={!stripe}
+            >
+                Pagar Ahora
+            </Button>
+        </Box>
     );
 }
 

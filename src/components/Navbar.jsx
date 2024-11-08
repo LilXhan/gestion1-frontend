@@ -1,4 +1,3 @@
-import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Avatar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,18 +5,16 @@ function Navbar({ username }) {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('client_secret');
-        localStorage.removeItem('username');
+        localStorage.clear();
         navigate('/login');
     };
 
     return (
-        <AppBar position="static" sx={{ mb: 4 }}>
+        <AppBar position="static">
             <Toolbar>
-                <Avatar sx={{ mr: 2 }}>{username ? username.charAt(0).toUpperCase() : '?'}</Avatar>
+                <Avatar sx={{ mr: 2 }}>{username.charAt(0).toUpperCase()}</Avatar>
                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                    Bienvenido, {username || 'Usuario'}
+                    Bienvenido, {username}
                 </Typography>
                 <Button color="inherit" onClick={handleLogout}>
                     Logout
