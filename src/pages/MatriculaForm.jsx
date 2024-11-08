@@ -3,9 +3,9 @@ import { Container, TextField, Button, Typography, Box, Paper, Input } from '@mu
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axiosConfig';
 import Navbar from '../components/Navbar';
-import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import StripePayment from '../components/StripePayment';
+import { Elements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe('pk_test_51QHzDLFE9D0inltwYpJpHqWvqy3yBRpE2Jlvz7clkYYnsJrn5CRtKerERvjac8Fenm1JeftFdTuEJIM4mGNtCGGy0065SBT2Kj');
 
@@ -19,6 +19,20 @@ function MatriculaForm() {
     const [clientSecret, setClientSecret] = useState(null);
     const username = localStorage.getItem('username') || 'Usuario';
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const checkStudent = async () => {
+            try {
+                const response = await axios.get('/matriculas/check-student/');
+                if (response.data.has_student) {
+                    navigate('/pago');
+                }
+            } catch (error) {
+                console.error("Error checking student:", error);
+            }
+        };
+        checkStudent();
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -63,9 +77,7 @@ function MatriculaForm() {
                             <Typography variant="h6" align="center" gutterBottom>
                                 ¡Estudiante registrado! Procede al pago.
                             </Typography>
-                            <Elements stripe={stripePromise}>
                                 <StripePayment clientSecret={clientSecret} onSuccess={() => navigate('/')} />
-                            </Elements>
                         </Box>
                     )}
                 </Paper>

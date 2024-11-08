@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Button, Box, Typography } from '@mui/material';
+import Navbar from './Navbar';
 
 function StripePayment({ clientSecret, onSuccess }) {
     const stripe = useStripe();
@@ -25,22 +26,25 @@ function StripePayment({ clientSecret, onSuccess }) {
     };
 
     return (
-        <Box mt={3} p={3} border="1px solid #ccc" borderRadius={2}>
-            <Typography variant="h6" gutterBottom>
-                Ingresar Información de Pago
-            </Typography>
-            <CardElement options={{ hidePostalCode: true }} />
-            <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                sx={{ mt: 3 }}
-                onClick={handlePayment}
-                disabled={!stripe}
-            >
-                Pagar Ahora
-            </Button>
-        </Box>
+        <>
+            <Navbar username={"hola"} />
+            <Box mt={3} p={3} border="1px solid #ccc" borderRadius={2}>
+                <Typography variant="h6" gutterBottom>
+                    Ingresar Información de Pago
+                </Typography>
+                <CardElement options={{ hidePostalCode: true }} />
+                <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{ mt: 3 }}
+                    onClick={handlePayment}
+                    disabled={!stripe}
+                    >
+                    Pagar Ahora
+                </Button>
+            </Box>
+        </>
     );
 }
 
