@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Container, TextField, Button, Typography, Box, Paper, Stepper, Step, StepLabel, CircularProgress, Input } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Container, TextField, Button, Typography, Box, Paper, Stepper, Step, StepLabel, CircularProgress, IconButton } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
+import { UploadFile } from '@mui/icons-material';
 import axios from '../utils/axiosConfig';
 import StripePayment from '../components/StripePayment';
 import Swal from 'sweetalert2';
@@ -35,18 +36,16 @@ function MatriculaForm() {
         const initializeForm = async () => {
             try {
                 const response = await axios.get('/api/matriculas/check-student/');
-                const { has_student, payment_completed, matricula_rechazada, client_secret } = response.data;
-
-                if (payment_completed && !matricula_rechazada) {
-                    navigate('/pago-exitoso'); // Redirige a PagoExitoso si el pago está completado y no hay rechazo
-                } else if (matricula_rechazada) {
+                if (response.data.payment_completed && !response.data.matricula_rechazada) {
+                    navigate('/matricula-aprobada');
+                } else if (response.data.matricula_rechazada) {
                     Swal.fire("Atención", "Tu matrícula ha sido rechazada. Por favor revisa tu información y vuelve a intentar.", "warning");
-                    setStep(0); // Muestra el formulario de registro en caso de rechazo
-                } else if (has_student) {
-                    setClientSecret(client_secret);
-                    setStep(2); // Si el estudiante ya está registrado, muestra el paso de pago
+                    setStep(0);
+                } else if (response.data.has_student) {
+                    setClientSecret(response.data.client_secret);
+                    setStep(2);
                 } else {
-                    setStep(0); // Si no hay estudiante registrado, muestra el formulario de matrícula
+                    setStep(0);
                 }
             } catch (error) {
                 Swal.fire({
@@ -63,6 +62,22 @@ function MatriculaForm() {
         initializeForm();
     }, [navigate]);
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+            setCertificado(file);
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Formato no válido',
+                text: 'Solo se aceptan archivos en formato PDF.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+            e.target.value = null;
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -77,7 +92,7 @@ function MatriculaForm() {
         try {
             const response = await axios.post('/api/matriculas/estudiante/crear/', formData);
             setClientSecret(response.data.client_secret);
-            setStep(2); // Pasa al paso de pago tras registro
+            setStep(2);
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -124,7 +139,20 @@ function MatriculaForm() {
 
     return (
         <Container maxWidth="sm">
-            <Stepper activeStep={step} alternativeLabel sx={{ mt: 4, mb: 4 }}>
+            <Stepper
+                activeStep={step}
+                alternativeLabel
+                sx={{
+                    mt: 4,
+                    mb: 4,
+                    '.MuiStepLabel-label': {
+                        color: theme.palette.mode === 'dark' ? '#FFD700' : '#0d6efd',
+                    },
+                    '.MuiStepIcon-root': {
+                        color: theme.palette.mode === 'dark' ? '#FFD700 !important' : '#0d6efd !important',
+                    },
+                }}
+            >
                 {steps.map((label) => (
                     <Step key={label}>
                         <StepLabel>{label}</StepLabel>
@@ -133,16 +161,56 @@ function MatriculaForm() {
             </Stepper>
 
             {step === 0 && (
-                <Paper elevation={4} sx={{ p: 4, borderRadius: 2 }}>
-                    <Typography variant="h4" align="center" gutterBottom>Formulario de Matrícula</Typography>
+                <Paper elevation={4} sx={{
+                    p: 4,
+                    borderRadius: 4,
+                    backgroundColor: theme.palette.mode === 'dark' ? '#1A1A1D' : '#FFFFFF',
+                    color: theme.palette.mode === 'dark' ? '#FFFFFF' : '#000000',
+                    boxShadow: '0px 4px 20px rgba(0,0,0,0.3)',
+                    textAlign: 'center'
+                }}>
+                    <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.mode === 'dark' ? '#FFFFFF' : '#000000' }}>
+                        Formulario de Matrícula
+                    </Typography>
                     <form onSubmit={handleSubmit}>
                         <TextField label="Nombre Completo" value={nombre} onChange={(e) => setNombre(e.target.value)} fullWidth margin="normal" required />
                         <TextField label="DNI" value={dni} onChange={(e) => setDni(e.target.value)} fullWidth margin="normal" required error={!/^\d{8}$/.test(dni)} helperText={!/^\d{8}$/.test(dni) ? "Ingrese un DNI válido de 8 dígitos" : ""} />
                         <TextField label="Fecha de Nacimiento" type="date" value={fechaNacimiento} onChange={(e) => setFechaNacimiento(e.target.value)} fullWidth margin="normal" required InputLabelProps={{ shrink: true }} />
                         <TextField label="Grado" value={grado} onChange={(e) => setGrado(e.target.value)} fullWidth margin="normal" required />
                         <TextField label="Dirección" value={direccion} onChange={(e) => setDireccion(e.target.value)} fullWidth margin="normal" required />
-                        <Input type="file" onChange={(e) => setCertificado(e.target.files[0])} fullWidth margin="normal" sx={{ mt: 2 }} />
-                        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={loading}>
+                        <Box
+                            display="flex"
+                            alignItems="center"
+                            sx={{ mt: 2, p: 2, border: `1px dashed ${theme.palette.divider}`, cursor: 'pointer', borderRadius: '8px' }}
+                            onClick={() => document.getElementById('certificado-input').click()}
+                        >
+                            <input
+                                id="certificado-input"
+                                type="file"
+                                onChange={handleFileChange}
+                                accept="application/pdf"
+                                style={{ display: 'none' }}
+                            />
+                            <IconButton color="primary">
+                                <UploadFile sx={{ color: theme.palette.mode === 'dark' ? '#FFD700' : '#0d6efd' }} />
+                            </IconButton>
+                            <Typography variant="body2" sx={{ ml: 1, color: theme.palette.mode === 'dark' ? '#FFFFFF' : '#000000' }}>
+                                {certificado ? certificado.name : "Selecciona tu certificado de estudios (solo PDF)"}
+                            </Typography>
+                        </Box>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            fullWidth
+                            sx={{
+                                mt: 3,
+                                fontWeight: 'bold',
+                                py: 1.2,
+                                backgroundColor: theme.palette.mode === 'dark' ? '#FFD700' : '#0d6efd',
+                                '&:hover': { backgroundColor: theme.palette.mode === 'dark' ? '#FFC107' : '#0056b3' }
+                            }}
+                            disabled={loading}
+                        >
                             {loading ? <CircularProgress size={24} /> : 'Registrar Estudiante'}
                         </Button>
                     </form>

@@ -1,6 +1,5 @@
-// Navbar.jsx
-import React, { useContext, useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Avatar, Badge, Tooltip, Menu, MenuItem, Divider } from '@mui/material';
+import { useContext, useEffect, useState } from 'react';
+import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Badge, Tooltip, Menu, MenuItem, Divider } from '@mui/material';
 import { Brightness4, Brightness7, Logout, Notifications, AccountCircle, Settings } from '@mui/icons-material';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
@@ -13,18 +12,18 @@ function Navbar({ darkMode, toggleTheme }) {
     const [anchorEl, setAnchorEl] = useState(null);
     const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
     const navigate = useNavigate();
-    
+
     const [notifications] = useState([
         { id: 1, message: "Nueva actualización disponible", read: false },
         { id: 2, message: "Completa tu perfil para obtener beneficios", read: true },
     ]);
 
     const theme = {
-        primary: darkMode ? '#1A1A1A' : '#FFFFFF',
-        textPrimary: darkMode ? '#FFFFFF' : '#2E2E2E',
-        highlight: darkMode ? '#3A3A3A' : '#F0F0F0',
-        accent: darkMode ? '#FFD700' : '#0d6efd',  // Amarillo en modo oscuro y azul en modo claro
-        iconColor: darkMode ? '#FFFFFF' : '#333333' // Blanco para oscuro y gris oscuro para claro
+        primary: darkMode ? '#1A1A1D' : '#FFFFFF',
+        textPrimary: darkMode ? '#E0E0E0' : '#2E2E2E',
+        highlight: darkMode ? '#2B2B2E' : '#F0F0F0',
+        accent: darkMode ? '#FFD700' : '#0d6efd',
+        iconColor: darkMode ? '#E0E0E0' : '#333333'
     };
 
     useEffect(() => {
@@ -33,7 +32,7 @@ function Navbar({ darkMode, toggleTheme }) {
                 const response = await axios.get('/api/matriculas/perfil/');
                 setUserData({
                     nombre: response.data.username,
-                    foto_perfil: response.data.foto_perfil,
+                    foto_perfil: `http://localhost:8000/${response.data.perfil?.foto_perfil}`,
                 });
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -85,7 +84,6 @@ function Navbar({ darkMode, toggleTheme }) {
             }}
         >
             <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {/* Logo / Brand Name */}
                 <Typography
                     variant="h6"
                     onClick={() => navigate('/')}
@@ -124,13 +122,16 @@ function Navbar({ darkMode, toggleTheme }) {
                         open={Boolean(notificationAnchorEl)}
                         onClose={handleNotificationsClose}
                         PaperProps={{
-                            elevation: 3,
+                            elevation: 4,
                             sx: {
                                 bgcolor: theme.highlight,
                                 color: theme.textPrimary,
                                 mt: 1.5,
-                                minWidth: 250,
-                                borderRadius: '8px',
+                                minWidth: 260,
+                                borderRadius: '12px',
+                                boxShadow: darkMode
+                                    ? '0px 4px 12px rgba(0, 0, 0, 0.4)'
+                                    : '0px 4px 12px rgba(0, 0, 0, 0.1)',
                             },
                         }}
                     >
@@ -140,7 +141,21 @@ function Navbar({ darkMode, toggleTheme }) {
                         <Divider />
                         {notifications.length > 0 ? (
                             notifications.map((notification) => (
-                                <MenuItem key={notification.id} onClick={handleNotificationsClose} sx={{ bgcolor: notification.read ? 'inherit' : '#f5f5f5' }}>
+                                <MenuItem
+                                    key={notification.id}
+                                    onClick={handleNotificationsClose}
+                                    sx={{
+                                        bgcolor: notification.read ? 'inherit' : '#3C3C3F',
+                                        color: notification.read ? theme.textPrimary : '#FFD700',
+                                        '&:hover': {
+                                            bgcolor: notification.read ? '#505052' : '#5A5A5D',
+                                        },
+                                        borderRadius: '8px',
+                                        margin: '4px',
+                                        px: 2,
+                                        py: 1,
+                                    }}
+                                >
                                     {notification.message}
                                 </MenuItem>
                             ))
@@ -149,14 +164,12 @@ function Navbar({ darkMode, toggleTheme }) {
                         )}
                     </Menu>
 
-                    {/* Theme Toggle Icon */}
                     <Tooltip title="Cambiar tema" arrow>
                         <IconButton onClick={toggleTheme} sx={{ color: theme.iconColor, '&:hover': { color: theme.accent } }}>
                             {darkMode ? <Brightness7 /> : <Brightness4 />}
                         </IconButton>
                     </Tooltip>
 
-                    {/* Profile Avatar */}
                     <Tooltip title="Cuenta" arrow>
                         <IconButton onClick={handleProfileMenuOpen}>
                             <Avatar
@@ -165,9 +178,7 @@ function Navbar({ darkMode, toggleTheme }) {
                                 sx={{
                                     width: 38,
                                     height: 38,
-                                    border: `2px solid ${theme.accent}`,
                                     '&:hover': {
-                                        borderColor: theme.accent,
                                         transform: 'scale(1.1)',
                                     },
                                     transition: 'all 0.3s ease-in-out',
@@ -186,7 +197,7 @@ function Navbar({ darkMode, toggleTheme }) {
                                 color: theme.textPrimary,
                                 mt: 1.5,
                                 minWidth: 200,
-                                borderRadius: '8px',
+                                borderRadius: '12px',
                             },
                         }}
                     >

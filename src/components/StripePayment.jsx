@@ -1,5 +1,4 @@
-// StripePayment.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Button, Box, Typography, CircularProgress } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -14,7 +13,6 @@ function StripePayment({ clientSecret, onSuccess }) {
     const [isClientSecretValid, setIsClientSecretValid] = useState(false);
 
     useEffect(() => {
-        // Verificar si el `clientSecret` tiene el formato correcto
         if (clientSecret && clientSecret.includes('_secret_')) {
             setIsClientSecretValid(true);
         } else {
@@ -46,19 +44,19 @@ function StripePayment({ clientSecret, onSuccess }) {
         setLoading(false);
     };
 
-    // Opciones de estilo para CardElement según el modo de tema
     const cardStyle = {
         style: {
             base: {
                 color: theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-                backgroundColor: theme.palette.mode === 'dark' ? '#2D2D2D' : '#ffffff',
                 fontFamily: 'Roboto, Open Sans, Segoe UI, sans-serif',
                 fontSize: '16px',
                 '::placeholder': {
                     color: theme.palette.mode === 'dark' ? '#bbbbbb' : '#888888',
                 },
                 padding: '12px',
-                borderRadius: '4px',
+                backgroundColor: theme.palette.mode === 'dark' ? '#444444' : '#ffffff',
+                borderRadius: '8px',
+                border: `1px solid ${theme.palette.mode === 'dark' ? '#666666' : '#cccccc'}`,
             },
             invalid: {
                 color: '#ff4d4f',
@@ -67,22 +65,38 @@ function StripePayment({ clientSecret, onSuccess }) {
     };
 
     return (
-        <Box mt={3} p={3} border="1px solid #ccc" borderRadius={2} sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#333333' : '#f5f5f5' }}>
-            <Typography variant="h6" gutterBottom>
+        <Box
+            mt={3}
+            p={3}
+            borderRadius={2}
+            sx={{
+                backgroundColor: theme.palette.mode === 'dark' ? '#333333' : '#f5f5f5',
+                boxShadow: theme.palette.mode === 'dark' ? '0 4px 12px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.1)',
+                padding: '20px',
+                border: `1px solid ${theme.palette.divider}`
+            }}
+        >
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.mode === 'dark' ? '#FFD700' : '#0d6efd' }}>
                 Ingresar Información de Pago
             </Typography>
-            <Box sx={{ padding: '10px', backgroundColor: theme.palette.mode === 'dark' ? '#444' : '#fff', borderRadius: '5px' }}>
+            <Box sx={{ padding: '15px', backgroundColor: theme.palette.mode === 'dark' ? '#444' : '#ffffff', borderRadius: '8px' }}>
                 <CardElement options={cardStyle} />
             </Box>
             <Button
                 variant="contained"
-                color="primary"
                 fullWidth
-                sx={{ mt: 3 }}
+                sx={{
+                    mt: 3,
+                    fontWeight: 'bold',
+                    backgroundColor: theme.palette.mode === 'dark' ? '#FFD700' : '#0d6efd',
+                    '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark' ? '#FFC107' : '#0056b3',
+                    },
+                }}
                 onClick={handlePayment}
                 disabled={!stripe || loading || !isClientSecretValid}
             >
-                {loading ? <CircularProgress size={24} /> : "Pagar Ahora"}
+                {loading ? <CircularProgress size={24} color="inherit" /> : "Pagar Ahora"}
             </Button>
         </Box>
     );
