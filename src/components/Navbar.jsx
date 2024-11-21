@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Badge, Tooltip, Menu, MenuItem, Divider } from '@mui/material';
 import { Brightness4, Brightness7, Logout, Notifications, AccountCircle, Settings } from '@mui/icons-material';
 import { AuthContext } from '../App';

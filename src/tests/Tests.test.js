@@ -6,7 +6,6 @@ import App, { AuthContext } from '../App';
 import userEvent from '@testing-library/user-event';
 import axiosInstance from '../utils/axiosConfig';
 
-
 jest.mock('../utils/axiosConfig', () => {
     const mockAxiosInstance = {
         interceptors: {
@@ -18,8 +17,75 @@ jest.mock('../utils/axiosConfig', () => {
         put: jest.fn(),
         delete: jest.fn(),
     };
+
+    let hasStudent = false; // Controla si el estudiante ha sido registrado
+    let matriculaRechazada = false; // Controla si la matrícula fue rechazada
+
+    // Mock específico para las diferentes rutas de tu aplicación
+    mockAxiosInstance.post.mockImplementation((url, data) => {
+        if (url === '/api/matriculas/registro/') {
+            // Registro de usuario
+            return Promise.resolve({ status: 201 });
+        }
+        if (url === '/api/matriculas/estudiante/crear/') {
+            // Registro del estudiante
+            hasStudent = true; // Simula que el estudiante ha sido registrado
+            return Promise.resolve({
+                data: { client_secret: 'mock-client-secret' },
+            });
+        }
+        if (url === '/api/auth/login/') {
+            // Login del usuario
+            return Promise.resolve({
+                status: 200,
+                data: { token: 'mock-token' },
+            });
+        }
+        return Promise.reject(new Error(`Unhandled POST request to ${url}`));
+    });
+
+    mockAxiosInstance.get.mockImplementation((url) => {
+        if (url === '/api/matriculas/check-student/') {
+            // Verificación del estado del estudiante
+            return Promise.resolve({
+                data: {
+                    has_student: hasStudent,
+                    matricula_rechazada: matriculaRechazada,
+                    payment_completed: false,
+                },
+            });
+        }
+        if (url === '/api/user/profile/') {
+            // Datos del usuario para el Navbar
+            return Promise.resolve({
+                data: { username: 'testuser', notifications: [] },
+            });
+        }
+        return Promise.reject(new Error(`Unhandled GET request to ${url}`));
+    });
+
+    mockAxiosInstance.get.mockImplementation((url) => {
+        if (url === '/api/matriculas/check-student/') {
+            return Promise.resolve({
+                data: {
+                    has_student: hasStudent,
+                    matricula_rechazada: matriculaRechazada,
+                    payment_completed: false,
+                },
+            });
+        }
+        if (url === '/api/user/profile/' || url === '/api/matriculas/perfil/') {
+            return Promise.resolve({
+                data: { username: 'testuser', notifications: [] },
+            });
+        }
+        return Promise.reject(new Error(`Unhandled GET request to ${url}`));
+    });
+
     return mockAxiosInstance;
 });
+
+
 
 // TESTS UNITARIOS
 
@@ -132,9 +198,15 @@ test('muestra un mensaje de error en caso de fallo en el registro', async () => 
 
 // TESTS DE SISTEMA 
 
-test('user can register and log in', async () => {
-    axiosInstance.post.mockResolvedValueOnce({ status: 201 }); // Mock registro exitoso
-    axiosInstance.post.mockResolvedValueOnce({ status: 200, data: { token: 'testtoken' } }); // Mock login exitoso
+test('user can register, log in, and access the MatriculaForm page', async () => {
+    axiosInstance.post.mockResolvedValueOnce({ status: 201 }); // Registro
+    axiosInstance.post.mockResolvedValueOnce({ status: 200, data: { token: 'testtoken' } }); // Login
+    axiosInstance.get.mockResolvedValueOnce({ // Check student status
+        data: { has_student: false, matricula_rechazada: false, payment_completed: false },
+    });
+    axiosInstance.post.mockResolvedValueOnce({ // Crear estudiante
+        data: { client_secret: 'mock-client-secret' },
+    });
 
     render(
         <AuthContext.Provider value={{ toggleTheme: jest.fn(), darkMode: false }}>
@@ -142,29 +214,36 @@ test('user can register and log in', async () => {
         </AuthContext.Provider>
     );
 
-    // Simula la navegación al registro
-    await userEvent.click(screen.getByText(/crear cuenta/i)); // Selecciona el link o botón de navegación
+    // Registro de usuario
+    await userEvent.click(screen.getByText(/crear cuenta/i));
     await userEvent.type(screen.getByLabelText(/nombre de usuario/i), 'testuser');
     await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
     await userEvent.type(screen.getByLabelText(/contraseña/i), 'password123');
+    await userEvent.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
-    // Asegúrate de seleccionar específicamente el botón
-    const createAccountButton = screen.getByRole('button', { name: /crear cuenta/i });
-    await userEvent.click(createAccountButton);
-
-    // Verifica si aparece el mensaje de éxito del registro
     await waitFor(() => {
         expect(screen.getByText(/cuenta creada con éxito/i)).toBeInTheDocument();
     });
 
-    // Simula el inicio de sesión
+    // Inicio de sesión
     await userEvent.type(screen.getByLabelText(/nombre de usuario/i), 'testuser');
     await userEvent.type(screen.getByLabelText(/contraseña/i), 'password123');
-    const loginButton = screen.getByRole('button', { name: /iniciar sesión/i });
-    await userEvent.click(loginButton);
+    await userEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
 
-    // Verifica si aparece el mensaje de bienvenida
+    // Formulario de matrícula
     await waitFor(() => {
-        expect(screen.getByText(/bienvenido/i)).toBeInTheDocument();
+        expect(screen.getByText(/formulario de matrícula/i)).toBeInTheDocument();
+    });
+
+    await userEvent.type(screen.getByLabelText(/nombre completo/i), 'Estudiante Test');
+    await userEvent.type(screen.getByLabelText(/dni/i), '12345678');
+    await userEvent.type(screen.getByLabelText(/fecha de nacimiento/i), '2000-01-01');
+    await userEvent.type(screen.getByLabelText(/grado/i), 'Primaria');
+    await userEvent.type(screen.getByLabelText(/dirección/i), 'Av. Prueba 123');
+    await userEvent.click(screen.getByRole('button', { name: /registrar estudiante/i }));
+
+    // Verificar que se muestre el paso de pago
+    await waitFor(() => {
+        expect(screen.getByTestId('payment-step')).toBeInTheDocument();
     });
 });

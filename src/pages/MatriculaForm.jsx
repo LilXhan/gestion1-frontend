@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, Box, Paper, Stepper, Step, StepLabel, CircularProgress, IconButton } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { UploadFile } from '@mui/icons-material';
@@ -218,7 +218,7 @@ function MatriculaForm() {
             )}
 
             {step === 2 && clientSecret && (
-                <Box mt={3}>
+                <Box mt={3} data-testid="payment-step">
                     <Typography variant="h6" align="center" gutterBottom>¡Estudiante registrado! Procede al pago.</Typography>
                     <StripePayment clientSecret={clientSecret} onSuccess={handlePaymentSuccess} />
                 </Box>
